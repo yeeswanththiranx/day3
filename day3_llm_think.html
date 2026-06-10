@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 3 — How LLMs Think & Their Limits | AI Internship</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --ink:#0A0A0A;--ink2:#2D2D2D;--ink3:#505050;--ink4:#909090;
+  --paper:#FFFFFF;--paper2:#F8F7F4;--paper3:#F0EEE9;--paper4:#E8E5DF;
+  --border:#E2DFD8;--border2:#C8C4BB;
+  --blue:#1D4ED8;--blue-l:#EFF6FF;--blue-m:#BFDBFE;
+  --green:#047857;--green-l:#ECFDF5;--green-m:#A7F3D0;
+  --amber:#B45309;--amber-l:#FFFBEB;--amber-m:#FDE68A;
+  --red:#B91C1C;--red-l:#FEF2F2;--red-m:#FECACA;
+  --purple:#6D28D9;--purple-l:#F5F3FF;--purple-m:#DDD6FE;
+  --teal:#0F766E;--teal-l:#F0FDFA;--teal-m:#99F6E4;
+  --r:14px;--r-sm:8px;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--paper);color:var(--ink);font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;line-height:1.7;}
+
+/* PROGRESS */
+.nav-progress{position:fixed;top:56px;left:0;height:3px;background:var(--blue);transition:width 0.1s;z-index:300;}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(255,255,255,0.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;padding:0 36px;gap:0;}
+.nav-brand{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--ink);margin-right:32px;white-space:nowrap;letter-spacing:-0.3px;}
+.nav-brand span{color:var(--blue);}
+.nav-links{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;}
+.nav-links::-webkit-scrollbar{display:none;}
+.nav-links a{display:block;padding:0 13px;height:56px;line-height:56px;font-size:12.5px;font-weight:600;color:var(--ink4);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:color 0.2s,border-color 0.2s;letter-spacing:0.2px;}
+.nav-links a:hover,.nav-links a.active{color:var(--blue);border-bottom-color:var(--blue);}
+body{padding-top:56px;}
+
+/* HERO */
+.hero{padding:80px 0 72px;text-align:center;border-bottom:1px solid var(--border);background:linear-gradient(180deg,var(--paper) 0%,var(--paper2) 100%);}
+.hero-day{font-family:'Fira Code',monospace;font-size:12px;letter-spacing:4px;color:var(--blue);margin-bottom:16px;text-transform:uppercase;}
+.hero-title{font-family:'Playfair Display',serif;font-size:clamp(40px,6vw,72px);font-weight:900;line-height:1.05;color:var(--ink);margin-bottom:18px;letter-spacing:-1px;}
+.hero-title em{font-style:italic;color:var(--blue);}
+.hero-sub{font-size:18px;color:var(--ink3);max-width:580px;margin:0 auto 36px;line-height:1.65;}
+.hero-tags{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:30px;font-size:13px;font-weight:600;border:1.5px solid;}
+.tag-blue{background:var(--blue-l);color:var(--blue);border-color:var(--blue-m);}
+.tag-green{background:var(--green-l);color:var(--green);border-color:var(--green-m);}
+.tag-amber{background:var(--amber-l);color:var(--amber);border-color:var(--amber-m);}
+
+/* TOPIC DIVIDER */
+.topic-div{background:var(--ink);color:white;padding:52px 36px;text-align:center;border-top:1px solid #222;}
+.td-label{font-family:'Fira Code',monospace;font-size:11px;letter-spacing:4px;color:rgba(255,255,255,0.35);margin-bottom:12px;text-transform:uppercase;}
+.td-title{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,48px);font-weight:900;color:white;line-height:1.1;letter-spacing:-0.5px;}
+.td-title em{font-style:italic;color:#93C5FD;}
+.td-sub{font-size:16px;color:rgba(255,255,255,0.5);margin-top:12px;max-width:540px;margin-left:auto;margin-right:auto;}
+
+/* SECTION */
+.section{padding:72px 0;border-bottom:1px solid var(--border);}
+.container{max-width:920px;margin:0 auto;padding:0 36px;}
+.eyebrow{font-family:'Fira Code',monospace;font-size:11px;letter-spacing:3px;color:var(--blue);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+.eyebrow::before{content:'';display:block;width:20px;height:1.5px;background:var(--blue);}
+.section-title{font-family:'Playfair Display',serif;font-size:clamp(26px,3.5vw,40px);font-weight:700;line-height:1.15;color:var(--ink);margin-bottom:14px;letter-spacing:-0.3px;}
+.section-title em{font-style:italic;color:var(--blue);}
+.section-lead{font-size:17px;color:var(--ink3);line-height:1.75;margin-bottom:40px;max-width:720px;}
+
+/* BODY TEXT */
+.prose{font-size:16px;color:var(--ink2);line-height:1.85;margin-bottom:32px;}
+.prose p{margin-bottom:16px;}
+.prose p:last-child{margin-bottom:0;}
+.prose strong{font-weight:700;color:var(--ink);}
+
+/* ANALOGY */
+.analogy{background:var(--paper2);border-left:4px solid var(--blue);border-radius:0 var(--r) var(--r) 0;padding:24px 30px;margin:28px 0;}
+.analogy-label{font-family:'Fira Code',monospace;font-size:10px;letter-spacing:2.5px;color:var(--blue);margin-bottom:10px;text-transform:uppercase;}
+.analogy-text{font-family:'Playfair Display',serif;font-size:20px;font-style:italic;color:var(--ink);line-height:1.6;margin-bottom:10px;}
+.analogy-sub{font-size:14px;color:var(--ink3);line-height:1.6;}
+
+/* CARDS */
+.card-grid{display:grid;gap:16px;margin-bottom:32px;}
+.g2{grid-template-columns:1fr 1fr;}
+.g3{grid-template-columns:1fr 1fr 1fr;}
+.card{background:var(--paper2);border:1px solid var(--border);border-radius:var(--r);padding:24px 26px;}
+.c-blue{border-top:3px solid var(--blue);background:var(--blue-l);}
+.c-green{border-top:3px solid var(--green);background:var(--green-l);}
+.c-amber{border-top:3px solid var(--amber);background:var(--amber-l);}
+.c-red{border-top:3px solid var(--red);background:var(--red-l);}
+.c-purple{border-top:3px solid var(--purple);background:var(--purple-l);}
+.c-teal{border-top:3px solid var(--teal);background:var(--teal-l);}
+.card-icon{font-size:26px;margin-bottom:10px;}
+.card-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--ink);margin-bottom:8px;}
+.card-body{font-size:14px;color:var(--ink3);line-height:1.75;}
+
+/* CODE */
+.code{background:#1A1A2E;border-radius:var(--r);padding:24px 28px;margin:24px 0;overflow-x:auto;}
+.code pre{font-family:'Fira Code',monospace;font-size:14px;line-height:1.9;color:#E2E8F0;}
+.co{color:#64748B;}.kw{color:#7DD3FC;}.st{color:#86EFAC;}.hl{color:#FCD34D;}.ok{color:#34D399;}.err{color:#F87171;}
+
+/* INFO BOXES */
+.info{background:var(--blue-l);border:1px solid var(--blue-m);border-radius:var(--r);padding:18px 22px;margin:24px 0;display:flex;gap:12px;}
+.warn{background:var(--amber-l);border:1px solid var(--amber-m);border-radius:var(--r);padding:18px 22px;margin:24px 0;display:flex;gap:12px;}
+.danger{background:var(--red-l);border:1px solid var(--red-m);border-radius:var(--r);padding:18px 22px;margin:24px 0;display:flex;gap:12px;}
+.success{background:var(--green-l);border:1px solid var(--green-m);border-radius:var(--r);padding:18px 22px;margin:24px 0;display:flex;gap:12px;}
+.box-icon{font-size:18px;flex-shrink:0;margin-top:2px;}
+.info .box-text{font-size:15px;color:#1E3A8A;line-height:1.65;}
+.warn .box-text{font-size:15px;color:#78350F;line-height:1.65;}
+.danger .box-text{font-size:15px;color:#7F1D1D;line-height:1.65;}
+.success .box-text{font-size:15px;color:#064E3B;line-height:1.65;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:15px;margin:24px 0;border-radius:var(--r);overflow:hidden;border:1px solid var(--border);}
+.tbl th{font-family:'Fira Code',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:13px 18px;text-align:left;background:var(--paper3);color:var(--ink4);border-bottom:1px solid var(--border);}
+.tbl td{padding:14px 18px;border-bottom:1px solid var(--border);color:var(--ink2);vertical-align:top;line-height:1.6;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--paper2);}
+
+/* TEMPERATURE SLIDER */
+.temp-demo{background:var(--paper2);border:1px solid var(--border);border-radius:var(--r);padding:28px;margin:24px 0;}
+.temp-slider{width:100%;-webkit-appearance:none;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--blue) 0%,var(--amber) 50%,var(--red) 100%);outline:none;margin:16px 0;}
+.temp-slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:white;border:3px solid var(--blue);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15);}
+.temp-labels{display:flex;justify-content:space-between;font-family:'Fira Code',monospace;font-size:11px;color:var(--ink4);margin-bottom:8px;}
+.temp-val{font-family:'Fira Code',monospace;font-size:24px;font-weight:600;color:var(--blue);text-align:center;margin-bottom:8px;}
+.temp-desc{font-size:14px;color:var(--ink3);text-align:center;min-height:44px;transition:all 0.2s;}
+.temp-example{background:var(--paper);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px 18px;margin-top:16px;font-size:14px;color:var(--ink2);line-height:1.6;min-height:60px;transition:all 0.2s;}
+
+/* PROMPT JOURNEY */
+.journey{display:flex;flex-direction:column;gap:0;}
+.journey-step{display:flex;gap:20px;padding:24px 0;border-bottom:1px solid var(--border);position:relative;}
+.journey-step:last-child{border-bottom:none;}
+.j-num{font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--border2);line-height:1;min-width:44px;}
+.j-content{}
+.j-title{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+.j-body{font-size:15px;color:var(--ink3);line-height:1.7;}
+.j-tag{display:inline-block;font-family:'Fira Code',monospace;font-size:10px;padding:3px 10px;border-radius:4px;margin-bottom:8px;font-weight:600;}
+
+/* LIMITATIONS */
+.limit-card{background:var(--paper2);border:1px solid var(--border);border-radius:var(--r);padding:28px 30px;margin-bottom:16px;}
+.limit-header{display:flex;align-items:center;gap:14px;margin-bottom:14px;cursor:pointer;}
+.limit-icon{width:44px;height:44px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.limit-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--ink);}
+.limit-badge{font-family:'Fira Code',monospace;font-size:10px;padding:3px 10px;border-radius:4px;margin-left:auto;}
+.limit-body{font-size:15px;color:var(--ink3);line-height:1.75;}
+.limit-body p{margin-bottom:12px;}
+.limit-body p:last-child{margin-bottom:0;}
+.limit-example{background:var(--paper);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px 18px;margin-top:14px;font-size:14px;line-height:1.6;}
+
+/* EMBEDDING VIZ */
+.embed-viz{background:var(--paper2);border:1px solid var(--border);border-radius:var(--r);padding:28px;margin:24px 0;}
+.embed-word{display:inline-block;padding:6px 14px;border-radius:6px;font-family:'Fira Code',monospace;font-size:14px;font-weight:600;margin:4px;}
+.embed-vector{font-family:'Fira Code',monospace;font-size:12px;color:var(--ink4);margin-top:4px;}
+
+/* QUIZ */
+.quiz-wrap{background:var(--paper2);padding:72px 0;}
+.quiz-hdr{text-align:center;margin-bottom:44px;}
+.qpbar-wrap{height:6px;background:var(--border);border-radius:3px;margin-bottom:28px;overflow:hidden;}
+.qpbar{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:3px;transition:width 0.4s;}
+.qstats{display:flex;gap:28px;justify-content:center;margin-bottom:28px;flex-wrap:wrap;}
+.qstat-num{font-family:'Playfair Display',serif;font-size:30px;font-weight:700;color:var(--ink);}
+.qstat-lbl{font-size:12px;color:var(--ink4);margin-top:2px;}
+.qcard{background:var(--paper);border:1px solid var(--border);border-radius:var(--r);padding:34px;margin-bottom:20px;display:none;}
+.qcard.active{display:block;}
+.qmeta{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.qnum{font-family:'Fira Code',monospace;font-size:12px;color:var(--blue);font-weight:600;}
+.qbadge{font-size:11px;padding:3px 10px;border-radius:12px;font-weight:600;}
+.qbadge-b{background:var(--green-l);color:var(--green);}
+.qbadge-t{background:var(--amber-l);color:var(--amber);}
+.qtext{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;color:var(--ink);line-height:1.4;margin-bottom:24px;}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.opt{background:var(--paper2);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:14px 18px;font-size:15px;color:var(--ink2);cursor:pointer;text-align:left;transition:all 0.15s;line-height:1.5;font-family:'Plus Jakarta Sans',sans-serif;}
+.opt:hover:not(:disabled){background:var(--blue-l);border-color:var(--blue);color:var(--blue);}
+.opt.correct{background:var(--green-l);border-color:var(--green);color:#064E3B;}
+.opt.wrong{background:var(--red-l);border-color:var(--red);color:#7F1D1D;}
+.opt:disabled{cursor:default;}
+.expl{margin-top:18px;padding:16px 20px;border-radius:var(--r-sm);background:var(--paper2);border:1px solid var(--border);font-size:14px;color:var(--ink3);line-height:1.75;display:none;}
+.expl.show{display:block;}
+.expl strong{color:var(--ink);}
+.qnav{display:flex;justify-content:space-between;align-items:center;margin-top:22px;}
+.btn{padding:11px 26px;border-radius:30px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;border:none;font-family:'Plus Jakarta Sans',sans-serif;}
+.btn-p{background:var(--blue);color:white;}
+.btn-p:hover{background:#1E40AF;}
+.btn-p:disabled{opacity:0.35;cursor:default;}
+.btn-o{background:transparent;color:var(--ink3);border:1.5px solid var(--border2);}
+.btn-o:hover{background:var(--paper3);}
+
+/* SCOREBOARD */
+.scoreboard{background:var(--paper);border:1px solid var(--border);border-radius:var(--r);padding:52px 40px;text-align:center;display:none;margin-top:20px;}
+.scoreboard.show{display:block;}
+.score-circle{width:150px;height:150px;border-radius:50%;margin:0 auto 28px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:6px solid var(--blue);}
+.score-n{font-family:'Playfair Display',serif;font-size:50px;font-weight:900;color:var(--blue);line-height:1;}
+.score-d{font-size:15px;color:var(--ink4);}
+.score-t{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--ink);margin-bottom:8px;}
+.score-m{font-size:16px;color:var(--ink3);margin-bottom:28px;}
+.score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:380px;margin:0 auto 28px;}
+.sg-item{padding:16px;border-radius:var(--r-sm);border:1px solid var(--border);}
+.sg-num{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;}
+.sg-lbl{font-size:12px;color:var(--ink4);margin-top:2px;}
+
+/* FOOTER */
+.footer{background:var(--paper3);border-top:1px solid var(--border);padding:28px 36px;text-align:center;font-size:13px;color:var(--ink4);}
+
+/* ATTENTION DEMO */
+.attn-demo{background:var(--paper2);border:1px solid var(--border);border-radius:var(--r);padding:28px;margin:24px 0;}
+.attn-sentence{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.attn-word{padding:8px 14px;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;border:2px solid transparent;transition:all 0.2s;}
+.attn-word:hover{transform:translateY(-2px);}
+.attn-result{background:var(--paper);border:1px solid var(--border);border-radius:var(--r-sm);padding:16px 20px;font-size:14px;color:var(--ink3);line-height:1.65;min-height:52px;}
+
+@media(max-width:768px){
+  .g2,.g3,.opts{grid-template-columns:1fr;}
+  .container{padding:0 20px;}
+  .nav{padding:0 16px;}
+  .score-grid{grid-template-columns:1fr 1fr;}
+  .journey-step{flex-direction:column;gap:6px;}
+}
+</style>
+</head>
+<body>
+
+<div class="nav-progress" id="progress"></div>
+
+<nav class="nav">
+  <div class="nav-brand">Day <span>03</span></div>
+  <div class="nav-links">
+    <a href="#transformer">Transformer</a>
+    <a href="#attention">Attention</a>
+    <a href="#parameters">Parameters</a>
+    <a href="#embeddings">Embeddings</a>
+    <a href="#temperature">Temperature</a>
+    <a href="#capabilities">Capabilities</a>
+    <a href="#limitations">Limitations</a>
+    <a href="#journey">Prompt Journey</a>
+    <a href="#quiz">Quiz</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-day">AI Internship · Day 03 of 15</div>
+  <h1 class="hero-title">How LLMs <em>Think</em><br>& Their Limits</h1>
+  <p class="hero-sub">What happens inside the model when you press Enter — and why it sometimes gets things completely wrong.</p>
+  <div class="hero-tags">
+    <span class="tag tag-blue">🔬 8 Deep Topics</span>
+    <span class="tag tag-green">💡 Interactive Demos</span>
+    <span class="tag tag-amber">🧠 15-Question Quiz</span>
+  </div>
+</div>
+
+<!-- ═══ TOPIC 1: TRANSFORMER ═══ -->
+<div class="topic-div" id="transformer">
+  <div class="td-label">Topic 01 of 08</div>
+  <div class="td-title">The <em>Transformer</em> — The 2017 Revolution</div>
+  <div class="td-sub">The single paper that changed everything about AI forever.</div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="eyebrow">The Architecture Behind Everything</div>
+    <h2 class="section-title">Before 2017, AI struggled with <em>language.</em></h2>
+    <p class="section-lead">Every modern LLM — ChatGPT, Claude, Gemini — is built on one architecture invented in 2017: the Transformer. Understanding it means understanding why AI suddenly became so good at language.</p>
+
+    <div class="prose">
+      <p>Before the Transformer, AI used a model called <strong>RNN (Recurrent Neural Network)</strong> to process language. RNNs read text one word at a time, from left to right — like a person reading slowly, remembering each word before moving to the next.</p>
+      <p>This worked — but it had a critical weakness: <strong>by the time the RNN reached the end of a long sentence, it had "forgotten" the beginning.</strong> Like trying to remember the first word of a paragraph by the time you reach the last sentence.</p>
+    </div>
+
+    <div class="card-grid g2">
+      <div class="card c-red">
+        <div class="card-icon">🐢</div>
+        <div class="card-title">RNN — Old Way (Before 2017)</div>
+        <div class="card-body">
+          Reads one word at a time → left to right.<br><br>
+          <strong>"The cat that chased the mouse that lived in the house that Jack built sat on the ___"</strong><br><br>
+          By the time it reaches "___", it has forgotten "cat." It guesses wrong.
+        </div>
+      </div>
+      <div class="card c-blue">
+        <div class="card-icon">⚡</div>
+        <div class="card-title">Transformer — New Way (2017+)</div>
+        <div class="card-body">
+          Reads ALL words simultaneously → sees the whole picture at once.<br><br>
+          Immediately connects "sat" back to "cat" — no forgetting. Gets it right every time.
+        </div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <p>In June 2017, eight Google researchers published a paper titled <strong>"Attention Is All You Need."</strong> It introduced the Transformer — a new architecture that could process all words in a sentence at the same time, figuring out relationships between any two words regardless of distance.</p>
+      <p>The impact was immediate. Within two years, every major AI lab had abandoned RNNs and switched to Transformers. GPT, BERT, Claude, Gemini — all Transformers.</p>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">The Classroom Analogy</div>
+      <div class="analogy-text">"RNN is like a student reading an essay by covering each word with their thumb, one at a time. Transformer is like a student who can see the entire essay at once — and immediately draw lines connecting related ideas anywhere on the page."</div>
+      <div class="analogy-sub">📌 The ability to see all words at once — and measure how strongly each word relates to every other word — is what makes Transformers so powerful at understanding language.</div>
+    </div>
+
+    <div class="info">
+      <div class="box-icon">💡</div>
+      <div class="box-text"><strong>Why "Attention Is All You Need"?</strong> The paper's title was a bold claim — that a simple mechanism called "attention" (no complex recurrence or convolution) was all you needed to achieve state-of-the-art language understanding. They were right. The paper has been cited over 100,000 times — one of the most influential in computing history.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TOPIC 2: ATTENTION ═══ -->
+<div class="topic-div" id="attention">
+  <div class="td-label">Topic 02 of 08</div>
+  <div class="td-title">The <em>Attention Mechanism</em> — How AI Understands Context</div>
+  <div class="td-sub">The single idea that makes language AI actually understand meaning.</div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="eyebrow">The Core Innovation</div>
+    <h2 class="section-title">Not all words matter <em>equally.</em></h2>
+    <p class="section-lead">Attention is the mechanism that lets the Transformer figure out which words in a sentence are most important to each other. It's why AI can understand ambiguous language — something that defeated every previous approach.</p>
+
+    <div class="prose">
+      <p>For every word in a sentence, the attention mechanism asks: <strong>"Which other words should I pay the most attention to when understanding this word?"</strong></p>
+      <p>It assigns an "attention score" between every pair of words. High score = these words are closely related. Low score = these words barely affect each other. The model uses these scores to build a rich, context-aware understanding of every word.</p>
+    </div>
+
+    <div class="attn-demo">
+      <div style="font-family:'Fira Code',monospace;font-size:11px;letter-spacing:2px;color:var(--ink4);margin-bottom:6px;text-transform:uppercase;">Interactive Demo — Click a word to see what it attends to</div>
+      <div style="font-size:14px;color:var(--ink3);margin-bottom:16px;">Sentence: "The trophy didn't fit in the suitcase because <strong>it</strong> was too big."</div>
+      <div class="attn-sentence" id="attnSentence">
+        <span class="attn-word" style="background:#F1F5F9;color:#475569;border-color:#CBD5E1;" onclick="showAttn('the1')">The</span>
+        <span class="attn-word" style="background:#FEF3C7;color:#92400E;border-color:#FCD34D;" onclick="showAttn('trophy')">trophy</span>
+        <span class="attn-word" style="background:#F1F5F9;color:#475569;border-color:#CBD5E1;" onclick="showAttn('didnt')">didn't</span>
+        <span class="attn-word" style="background:#F1F5F9;color:#475569;border-color:#CBD5E1;" onclick="showAttn('fit')">fit</span>
+        <span class="attn-word" style="background:#F1F5F9;color:#475569;border-color:#CBD5E1;" onclick="showAttn('in')">in</span>
+        <span class="attn-word" style="background:#F1F5F9;color:#475569;border-color:#CBD5E1;" onclick="showAttn('the2')">the</span>
+        <span class="attn-word" style="background:#DBEAFE;color:#1E3A8A;border-color:#93C5FD;" onclick="showAttn('suitcase')">suitcase</span>
+        <span class="attn-word" style="background:#F1F5F9;color:#475569;border-color:#CBD5E1;" onclick="showAttn('because')">because</span>
+        <span class="attn-word" style="background:#EDE9FE;color:#4C1D95;border-color:#A78BFA;" onclick="showAttn('it')">it</span>
+        <span class="attn-word" style="background:#F1F5F9;color:#475569;border-color:#CBD5E1;" onclick="showAttn('was')">was</span>
+        <span class="attn-word" style="background:#F1F5F9;color:#475569;border-color:#CBD5E1;" onclick="showAttn('too')">too</span>
+        <span class="attn-word" style="background:#DCFCE7;color:#14532D;border-color:#86EFAC;" onclick="showAttn('big')">big</span>
+      </div>
+      <div class="attn-result" id="attnResult">👆 Click any word above to see how the Transformer understands it in context.</div>
+    </div>
+
+    <div class="prose">
+      <p>This is what makes Transformers so revolutionary. Previous AI could not reliably resolve what "it" referred to in a complex sentence. The attention mechanism solves this by letting the model look across the entire sentence simultaneously and measure relationships.</p>
+    </div>
+
+    <div class="card-grid g3">
+      <div class="card c-blue">
+        <div class="card-icon">🎯</div>
+        <div class="card-title">Self-Attention</div>
+        <div class="card-body">Words attend to other words in the same sentence. Used to understand meaning within one piece of text.</div>
+      </div>
+      <div class="card c-purple">
+        <div class="card-icon">🔄</div>
+        <div class="card-title">Multi-Head Attention</div>
+        <div class="card-body">Multiple attention operations run in parallel — each "head" looks for different types of relationships. Grammar, meaning, coreference, all at once.</div>
+      </div>
+      <div class="card c-teal">
+        <div class="card-icon">🌐</div>
+        <div class="card-title">Cross-Attention</div>
+        <div class="card-body">Words in one sequence attend to words in another. Used in translation — attending from English words to French words.</div>
+      </div>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">The Spotlight Analogy</div>
+      <div class="analogy-text">"Attention is like a spotlight in a theatre. Instead of lighting the entire stage equally, the spotlight shines brightest on the most important actors for each scene. For each word, the Transformer spotlights the most relevant other words — dimming everything less important."</div>
+      <div class="analogy-sub">📌 GPT-4 runs 96 attention heads simultaneously — 96 different spotlights, each looking for different relationships, all at once.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TOPIC 3: PARAMETERS ═══ -->
+<div class="topic-div" id="parameters">
+  <div class="td-label">Topic 03 of 08</div>
+  <div class="td-title"><em>Parameters & Weights</em> — The AI Brain Size</div>
+  <div class="td-sub">The numbers that encode everything the AI has ever learned.</div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="eyebrow">The Scale of Knowledge</div>
+    <h2 class="section-title">Billions of tiny knobs, <em>perfectly tuned.</em></h2>
+    <p class="section-lead">Parameters are the numbers inside a neural network. They start random, get adjusted trillions of times during training, and by the end — they encode the patterns of all human language.</p>
+
+    <div class="prose">
+      <p>Imagine a mixing board in a recording studio — hundreds of sliders and knobs, each controlling one aspect of the sound. Now imagine a mixing board with <strong>175 billion sliders</strong> — that's GPT-3. Each slider is a parameter, tuned during training to produce the correct output for any input.</p>
+      <p>Parameters are not "facts" stored in a database. They are <strong>patterns encoded as numbers</strong>. The knowledge that Paris is the capital of France isn't stored as text — it's distributed across millions of parameters that together make "Paris" the most likely output when asked about France's capital.</p>
+    </div>
+
+    <table class="tbl">
+      <thead><tr><th>Model</th><th>Company</th><th>Year</th><th>Parameters</th><th>Roughly equals</th></tr></thead>
+      <tbody>
+        <tr><td>GPT-2</td><td>OpenAI</td><td>2019</td><td>1.5 Billion</td><td>A smart junior assistant</td></tr>
+        <tr><td>GPT-3</td><td>OpenAI</td><td>2020</td><td>175 Billion</td><td>Shocked the entire industry</td></tr>
+        <tr><td>Llama 3</td><td>Meta</td><td>2024</td><td>70 Billion</td><td>Runs on consumer hardware</td></tr>
+        <tr><td>GPT-4</td><td>OpenAI</td><td>2023</td><td>~1 Trillion (est.)</td><td>Frontier capability</td></tr>
+        <tr><td>Claude 3.5</td><td>Anthropic</td><td>2024</td><td>Undisclosed</td><td>Current frontier leader</td></tr>
+        <tr><td>Gemini Ultra</td><td>Google</td><td>2024</td><td>Undisclosed</td><td>Multimodal frontier</td></tr>
+      </tbody>
+    </table>
+
+    <div class="warn">
+      <div class="box-icon">⚠️</div>
+      <div class="box-text"><strong>More parameters ≠ always smarter.</strong> Meta's Llama 3 (70B parameters) outperforms many larger models because of superior training data and architecture. Quality of training beats raw size. A smaller, well-trained model can outperform a larger, poorly-trained one.</div>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">The Rupee Analogy</div>
+      <div class="analogy-text">"If each parameter were one rupee, GPT-3 would be worth ₹175 billion. GPT-4 would be a trillionaire. Each rupee is a tiny piece of learned knowledge — alone it means nothing, but together they produce intelligence."</div>
+      <div class="analogy-sub">📌 When you "download" an AI model, you're downloading a file containing billions of these numbers. GPT-3's weights file is about 700GB — bigger than most hard drives.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TOPIC 4: EMBEDDINGS ═══ -->
+<div class="topic-div" id="embeddings">
+  <div class="td-label">Topic 04 of 08</div>
+  <div class="td-title"><em>Embeddings</em> — How Words Become Numbers</div>
+  <div class="td-sub">The bridge between human language and machine mathematics.</div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="eyebrow">Words as Coordinates</div>
+    <h2 class="section-title">AI doesn't see words. It sees <em>vectors.</em></h2>
+    <p class="section-lead">Before any processing can happen, words must be converted into numbers. Embeddings are that conversion — and they're smarter than you'd expect.</p>
+
+    <div class="prose">
+      <p>A computer can't process the word "cat" directly. It needs numbers. So each token gets converted into a long list of numbers called a <strong>vector</strong> or <strong>embedding</strong>. Think of it as GPS coordinates — but instead of locating a place on a map, it locates a word in "meaning space."</p>
+      <p>Words with similar meanings end up with similar number vectors — close together in meaning space. Words with very different meanings end up far apart.</p>
+    </div>
+
+    <div class="embed-viz">
+      <div style="font-family:'Fira Code',monospace;font-size:11px;letter-spacing:2px;color:var(--ink4);margin-bottom:16px;text-transform:uppercase;">Word Embeddings — Simplified Visualization</div>
+      <div style="margin-bottom:20px;">
+        <div style="margin-bottom:12px;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <span class="embed-word" style="background:#DBEAFE;color:#1E3A8A;">King</span>
+          <div>
+            <div class="embed-vector">[0.82, 0.91, 0.14, 0.77, 0.33, ...]</div>
+            <div style="font-size:13px;color:var(--ink3);margin-top:4px;">Meaning space: royalty, power, male, human</div>
+          </div>
+        </div>
+        <div style="margin-bottom:12px;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <span class="embed-word" style="background:#FCE7F3;color:#831843;">Queen</span>
+          <div>
+            <div class="embed-vector">[0.82, 0.90, 0.14, 0.22, 0.33, ...]</div>
+            <div style="font-size:13px;color:var(--ink3);margin-top:4px;">Very similar to King — only the "gender" dimension differs</div>
+          </div>
+        </div>
+        <div style="margin-bottom:12px;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <span class="embed-word" style="background:#DCFCE7;color:#14532D;">Apple</span>
+          <div>
+            <div class="embed-vector">[0.11, 0.03, 0.88, 0.04, 0.91, ...]</div>
+            <div style="font-size:13px;color:var(--ink3);margin-top:4px;">Completely different — fruit, food, object, no royalty connection</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <span class="embed-word" style="background:#FEF3C7;color:#92400E;">Chennai</span>
+          <div>
+            <div class="embed-vector">[0.55, 0.21, 0.44, 0.67, 0.12, ...]</div>
+            <div style="font-size:13px;color:var(--ink3);margin-top:4px;">Close to Mumbai, Delhi — city, India, location, culture</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--paper);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px 18px;font-size:14px;color:var(--ink3);">
+        🔢 Real embeddings have <strong>thousands of dimensions</strong> — not just 5. GPT-4 uses 12,288-dimensional vectors. Each dimension encodes a different aspect of meaning: gender, animacy, location, sentiment, formality, and thousands more.
+      </div>
+    </div>
+
+    <div class="prose">
+      <p>The most famous example of embedding arithmetic:</p>
+    </div>
+
+    <div class="code">
+      <pre><span class="co"># Famous embedding arithmetic that proves AI understands meaning</span>
+
+<span class="hl">King</span> − <span class="st">Man</span> + <span class="st">Woman</span> = <span class="ok">Queen</span>   ✅
+
+<span class="hl">Paris</span> − <span class="st">France</span> + <span class="st">India</span> = <span class="ok">Delhi</span>   ✅
+
+<span class="hl">Walking</span> − <span class="st">Walk</span> + <span class="st">Run</span> = <span class="ok">Running</span>   ✅
+
+<span class="co"># This works because the vector arithmetic captures semantic relationships</span>
+<span class="co"># "King - Man" = the concept of royalty without gender</span>
+<span class="co"># Add "Woman" = female royalty = Queen</span></pre>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">The City Map Analogy</div>
+      <div class="analogy-text">"Embeddings are like placing words on a map. Similar words live in the same neighbourhood — 'happy', 'joyful', 'elated' are all nearby. 'Sad' is across town. 'Car' is in a completely different city. The AI navigates this map to understand meaning."</div>
+      <div class="analogy-sub">📌 When you type a prompt, every word gets converted to its embedding coordinates. The Transformer then reasons about the relationships between all these coordinates to generate a response.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TOPIC 5: TEMPERATURE ═══ -->
+<div class="topic-div" id="temperature">
+  <div class="td-label">Topic 05 of 08</div>
+  <div class="td-title"><em>Temperature</em> — Creative vs Safe AI</div>
+  <div class="td-sub">The dial that controls how adventurous or conservative the AI is.</div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="eyebrow">Controlling Randomness</div>
+    <h2 class="section-title">Same prompt. Different answers. <em>Why?</em></h2>
+    <p class="section-lead">Ask ChatGPT the same question twice and you get different answers. This isn't a bug — it's temperature at work. Temperature controls how random or predictable the AI's responses are.</p>
+
+    <div class="prose">
+      <p>When an LLM generates the next token, it produces a probability score for every possible token. For example, after "The sky is", it might say: "blue" = 70%, "dark" = 15%, "clear" = 10%, "purple" = 4%, "green" = 1%...</p>
+      <p>Temperature controls how the AI chooses from these probabilities. <strong>Low temperature = always picks the highest probability. High temperature = more willing to pick less likely options.</strong></p>
+    </div>
+
+    <div class="temp-demo">
+      <div style="font-family:'Fira Code',monospace;font-size:11px;letter-spacing:2px;color:var(--ink4);margin-bottom:16px;text-transform:uppercase;">🎛️ Interactive Temperature Slider</div>
+      <div class="temp-labels"><span>0.0 — Precise</span><span>0.5 — Balanced</span><span>1.0 — Creative</span><span>2.0 — Wild</span></div>
+      <input type="range" class="temp-slider" id="tempSlider" min="0" max="20" value="7" oninput="updateTemp()">
+      <div class="temp-val" id="tempVal">0.7</div>
+      <div class="temp-desc" id="tempDesc">Balanced — slightly creative, mostly accurate. Default for most AI assistants.</div>
+      <div style="font-size:13px;font-weight:600;color:var(--ink3);margin-top:16px;margin-bottom:6px;">Sample output for "Write a word to describe the ocean":</div>
+      <div class="temp-example" id="tempExample">vast</div>
+    </div>
+
+    <table class="tbl">
+      <thead><tr><th>Temperature</th><th>Behaviour</th><th>Best Used For</th><th>Risk</th></tr></thead>
+      <tbody>
+        <tr><td><strong>0.0</strong></td><td>Always picks the safest, most likely word</td><td>Facts, maths, code, medical info</td><td>Boring, repetitive</td></tr>
+        <tr><td><strong>0.3–0.5</strong></td><td>Mostly safe with slight variation</td><td>Professional writing, summaries</td><td>Slightly predictable</td></tr>
+        <tr><td><strong>0.7</strong></td><td>Balanced creativity and accuracy</td><td>General use — ChatGPT default</td><td>Occasional odd choice</td></tr>
+        <tr><td><strong>1.0</strong></td><td>More random, noticeably creative</td><td>Poetry, stories, brainstorming</td><td>May drift off topic</td></tr>
+        <tr><td><strong>2.0</strong></td><td>Very random, often incoherent</td><td>Experimental only</td><td>Frequent nonsense</td></tr>
+      </tbody>
+    </table>
+
+    <div class="analogy">
+      <div class="analogy-label">The Student Analogy</div>
+      <div class="analogy-text">"Temperature 0 is the student who only writes what's in the textbook — always correct, never original. Temperature 2 is the student who writes whatever comes to mind — wildly creative but often wrong. Temperature 0.7 is the student who knows the material well and adds their own thoughtful perspective."</div>
+      <div class="analogy-sub">📌 Different tasks need different temperatures. Ask an AI to verify a medical dosage → Temperature 0. Ask it to write a creative story → Temperature 0.9. Most AI apps set this automatically behind the scenes.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TOPIC 6: CAPABILITIES ═══ -->
+<div class="topic-div" id="capabilities">
+  <div class="td-label">Topic 06 of 08</div>
+  <div class="td-title">LLM <em>Capabilities</em> — What They Can Do Today</div>
+  <div class="td-sub">The full range of what modern LLMs are actually capable of.</div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="eyebrow">What LLMs Can Do</div>
+    <h2 class="section-title">One model. <em>Hundreds of use cases.</em></h2>
+    <p class="section-lead">Modern LLMs have capabilities that would have seemed like science fiction a decade ago. Here is the complete picture of what they can genuinely do well today.</p>
+
+    <div class="card-grid g3">
+      <div class="card c-blue">
+        <div class="card-icon">✍️</div>
+        <div class="card-title">Text Generation</div>
+        <div class="card-body">Essays, stories, emails, reports, product descriptions, social media posts. Writes in any style, tone, or length. Translates between 100+ languages.</div>
+      </div>
+      <div class="card c-purple">
+        <div class="card-icon">🧩</div>
+        <div class="card-title">Reasoning & Analysis</div>
+        <div class="card-body">Breaks down complex problems step by step. Evaluates arguments. Finds logical errors. Solves multi-step word problems. Plans projects.</div>
+      </div>
+      <div class="card c-green">
+        <div class="card-icon">💻</div>
+        <div class="card-title">Code Generation</div>
+        <div class="card-body">Writes working code in 40+ languages. Debugs errors. Explains what code does. Suggests optimizations. Reviews pull requests.</div>
+      </div>
+      <div class="card c-amber">
+        <div class="card-icon">📋</div>
+        <div class="card-title">Summarization</div>
+        <div class="card-body">Condenses long documents, research papers, meeting notes, or books into clear summaries. Extracts key points. Creates bullet lists.</div>
+      </div>
+      <div class="card c-teal">
+        <div class="card-icon">🔍</div>
+        <div class="card-title">Question Answering</div>
+        <div class="card-body">Answers questions about any topic it was trained on. Explains concepts from beginner to expert level. Gives step-by-step instructions.</div>
+      </div>
+      <div class="card c-red">
+        <div class="card-icon">🖼️</div>
+        <div class="card-title">Multimodal (Latest)</div>
+        <div class="card-body">GPT-4o, Claude 3.5, Gemini can now see images, analyze charts, read documents, and process audio — not just text.</div>
+      </div>
+    </div>
+
+    <div class="success">
+      <div class="box-icon">✅</div>
+      <div class="box-text"><strong>Emerging capability — Agentic behavior:</strong> Latest LLMs can use tools (web search, code execution, file management) and complete multi-step tasks autonomously. This is the foundation of AI Agents — which you'll cover in Days 7–11 of this course.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TOPIC 7: LIMITATIONS ═══ -->
+<div class="topic-div" id="limitations">
+  <div class="td-label">Topic 07 of 08</div>
+  <div class="td-title">LLM <em>Limitations</em> — Where They Break Down</div>
+  <div class="td-sub">The four critical weaknesses every AI user must understand.</div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="eyebrow">The Hard Limits</div>
+    <h2 class="section-title">Powerful — but not <em>infallible.</em></h2>
+    <p class="section-lead">LLMs have real, serious limitations that cause real problems in the real world. Understanding these is just as important as understanding their capabilities.</p>
+
+    <!-- HALLUCINATION -->
+    <div class="limit-card" style="border-top:3px solid var(--red);">
+      <div class="limit-header">
+        <div class="limit-icon" style="background:var(--red-l);">🌀</div>
+        <div>
+          <div class="limit-name">Hallucination</div>
+          <div style="font-size:14px;color:var(--ink3);margin-top:2px;">Confidently stating things that are completely false</div>
+        </div>
+        <span class="limit-badge" style="background:var(--red-l);color:var(--red);">MOST DANGEROUS</span>
+      </div>
+      <div class="limit-body">
+        <p>Hallucination is the single most dangerous flaw in LLMs. Because LLMs generate responses by predicting what text <em>should</em> look like — not by retrieving verified facts — they sometimes generate text that <strong>sounds completely real but is entirely made up.</strong></p>
+        <p>The AI doesn't know it's hallucinating. It has no "uncertainty alarm." It states false information with the same confident tone as true information. This is what makes it dangerous — especially in medical, legal, or financial contexts.</p>
+        <div class="limit-example" style="border-left:3px solid var(--red);background:var(--red-l);">
+          <strong style="color:var(--red);">Real Example of Hallucination:</strong><br>
+          Ask an LLM: <em>"Tell me about the Tamil poet Murugesan who wrote Kavitha Kalanjiyam in 1987."</em><br>
+          The LLM might respond: <em>"Murugesan was a celebrated Tamil poet born in Madurai in 1952. Kavitha Kalanjiyam, published in 1987, received the Sahitya Akademi award in 1989..."</em><br>
+          <strong>This person and book may not exist at all.</strong> The LLM generated a plausible-sounding answer.
+        </div>
+        <div class="limit-example" style="border-left:3px solid var(--green);background:var(--green-l);margin-top:12px;">
+          <strong style="color:var(--green);">How to protect yourself:</strong> Always verify factual claims from LLMs using authoritative sources. Never use LLM output as the sole source for medical, legal, or financial decisions. If an answer can be verified — verify it.
+        </div>
+      </div>
+    </div>
+
+    <!-- KNOWLEDGE CUTOFF -->
+    <div class="limit-card" style="border-top:3px solid var(--amber);">
+      <div class="limit-header">
+        <div class="limit-icon" style="background:var(--amber-l);">📅</div>
+        <div>
+          <div class="limit-name">Knowledge Cutoff</div>
+          <div style="font-size:14px;color:var(--ink3);margin-top:2px;">The AI is frozen in time — it knows nothing after its training date</div>
+        </div>
+        <span class="limit-badge" style="background:var(--amber-l);color:var(--amber);">SIGNIFICANT</span>
+      </div>
+      <div class="limit-body">
+        <p>LLMs are trained on data up to a specific date and then frozen. After that cutoff, the world moves on — but the AI doesn't. It has no awareness of events, discoveries, elections, or releases that happened after training.</p>
+        <table class="tbl" style="margin-top:12px;">
+          <thead><tr><th>Model</th><th>Knowledge Cutoff</th><th>What It Doesn't Know</th></tr></thead>
+          <tbody>
+            <tr><td>GPT-3.5</td><td>September 2021</td><td>Everything after — 3+ years of world events</td></tr>
+            <tr><td>GPT-4</td><td>April 2023</td><td>Recent AI developments, elections, discoveries</td></tr>
+            <tr><td>Claude 3.5</td><td>Early 2024</td><td>Latest months of news and releases</td></tr>
+            <tr><td>Gemini 1.5</td><td>Early 2024</td><td>Recent global events</td></tr>
+          </tbody>
+        </table>
+        <div class="limit-example" style="border-left:3px solid var(--amber);background:var(--amber-l);margin-top:12px;">
+          <strong style="color:var(--amber);">The solution:</strong> Tools like Perplexity AI and ChatGPT with Browse add real-time web search on top of LLMs. The LLM handles reasoning; the search tool provides current information. Together they solve the cutoff problem.
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTEXT WINDOW -->
+    <div class="limit-card" style="border-top:3px solid var(--blue);">
+      <div class="limit-header">
+        <div class="limit-icon" style="background:var(--blue-l);">📝</div>
+        <div>
+          <div class="limit-name">Context Window Limit</div>
+          <div style="font-size:14px;color:var(--ink3);margin-top:2px;">The AI can only "see" a limited amount of text at once</div>
+        </div>
+        <span class="limit-badge" style="background:var(--blue-l);color:var(--blue);">PRACTICAL</span>
+      </div>
+      <div class="limit-body">
+        <p>Every LLM has a fixed context window — the maximum amount of text it can process at one time. Think of it as the AI's working desk. Once the desk is full, new papers push old ones off the edge — the AI forgets the beginning of the conversation.</p>
+        <p>This means very long conversations, large documents, or extensive code bases may exceed the context window, causing the AI to lose track of earlier important information.</p>
+        <div class="limit-example" style="border-left:3px solid var(--blue);background:var(--blue-l);margin-top:12px;">
+          <strong style="color:var(--blue);">Real scenario:</strong> You paste a 500-page legal contract into Claude and ask it to find clauses about liability. If the contract exceeds 200K tokens, the AI cannot process the full document in one go. Solution: chunk the document into sections and process each separately — or use models with larger context windows.
+        </div>
+      </div>
+    </div>
+
+    <!-- BIAS -->
+    <div class="limit-card" style="border-top:3px solid var(--purple);">
+      <div class="limit-header">
+        <div class="limit-icon" style="background:var(--purple-l);">⚖️</div>
+        <div>
+          <div class="limit-name">Bias & Fairness</div>
+          <div style="font-size:14px;color:var(--ink3);margin-top:2px;">The AI reflects the biases in its training data</div>
+        </div>
+        <span class="limit-badge" style="background:var(--purple-l);color:var(--purple);">SYSTEMIC</span>
+      </div>
+      <div class="limit-body">
+        <p>LLMs learn from internet text — and internet text reflects society's biases. If medical articles primarily show male doctors and female nurses, the AI absorbs that pattern. If most CEO articles use "he," the AI may do the same. These biases are often subtle and hard to detect.</p>
+        <p>Types of bias found in LLMs include: <strong>gender bias</strong> (associating roles with genders), <strong>cultural bias</strong> (Western perspectives dominating), <strong>racial bias</strong> (harmful stereotypes from training data), and <strong>recency bias</strong> (recent internet trends over-represented).</p>
+        <div class="limit-example" style="border-left:3px solid var(--purple);background:var(--purple-l);margin-top:12px;">
+          <strong style="color:var(--purple);">Active research area:</strong> Every major AI company has dedicated teams working on bias detection and mitigation. It's one of the hardest unsolved problems in AI — because biases in data are often reflections of real-world inequalities, not just errors.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TOPIC 8: PROMPT JOURNEY ═══ -->
+<div class="topic-div" id="journey">
+  <div class="td-label">Topic 08 of 08</div>
+  <div class="td-title">The <em>Prompt Journey</em> — What Happens in 1 Second</div>
+  <div class="td-sub">The complete technical journey from your keypress to the AI's response.</div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="eyebrow">End to End</div>
+    <h2 class="section-title">You press Enter. <em>Here is everything that happens.</em></h2>
+    <p class="section-lead">In approximately one second, your text travels through eight distinct technical stages before the first word of a response appears. Here is every step.</p>
+
+    <div class="code" style="margin-bottom:36px;">
+      <pre><span class="hl">YOUR PROMPT:</span> <span class="st">"Explain photosynthesis like I am 10 years old"</span>
+
+<span class="co">STEP 1:</span>  Tokenize  → <span class="kw">["Explain", "photo", "syn", "thesis", "like", "I", "am", "10", ...]</span>
+<span class="co">STEP 2:</span>  Embed     → Each token → 12,288 numbers (vector)
+<span class="co">STEP 3:</span>  Stack     → All token vectors → input matrix
+<span class="co">STEP 4:</span>  Attention → 96 heads compute relationships simultaneously
+<span class="co">STEP 5:</span>  96 Transformer layers refine understanding
+<span class="co">STEP 6:</span>  Output layer → probability scores for all 50,000 tokens
+<span class="co">STEP 7:</span>  Temperature sampling → picks next token
+<span class="co">STEP 8:</span>  Detokenize → number → word → streamed to your screen
+
+<span class="ok">OUTPUT (word 1):</span> <span class="st">"Photosynthesis"</span>
+<span class="co">→ Repeat steps 4-8 for EVERY subsequent word until response is complete</span></pre>
+    </div>
+
+    <div class="journey">
+      <div class="journey-step">
+        <div class="j-num">01</div>
+        <div class="j-content">
+          <span class="j-tag" style="background:var(--blue-l);color:var(--blue);">TOKENIZATION</span>
+          <div class="j-title">Your text is broken into tokens</div>
+          <div class="j-body">Your message is split into tokens — chunks of roughly 3–4 characters. "Photosynthesis" becomes multiple tokens. Spaces, punctuation, and special characters all become their own tokens. The full prompt becomes a sequence of token IDs (numbers).</div>
+        </div>
+      </div>
+      <div class="journey-step">
+        <div class="j-num">02</div>
+        <div class="j-content">
+          <span class="j-tag" style="background:var(--purple-l);color:var(--purple);">EMBEDDING</span>
+          <div class="j-title">Each token becomes a high-dimensional vector</div>
+          <div class="j-body">Every token ID is converted into a vector — a list of thousands of numbers representing the word's meaning. "Explain" gets a vector encoding: verb, imperative, clarification request. "10 years old" gets a vector encoding: young, child, simplify. These vectors carry semantic meaning into the model.</div>
+        </div>
+      </div>
+      <div class="journey-step">
+        <div class="j-num">03</div>
+        <div class="j-content">
+          <span class="j-tag" style="background:var(--teal-l);color:var(--teal);">POSITIONAL ENCODING</span>
+          <div class="j-title">Position information is added</div>
+          <div class="j-body">Since the Transformer processes all tokens simultaneously, it needs to know their order. Positional encoding adds information about where each token sits in the sequence — token 1, token 2, token 3. Without this, "dog bites man" and "man bites dog" would look identical to the model.</div>
+        </div>
+      </div>
+      <div class="journey-step">
+        <div class="j-num">04</div>
+        <div class="j-content">
+          <span class="j-tag" style="background:var(--amber-l);color:var(--amber);">MULTI-HEAD ATTENTION</span>
+          <div class="j-title">96 attention heads analyse relationships simultaneously</div>
+          <div class="j-body">Every token attends to every other token. 96 attention heads run in parallel — each looking for different types of relationships. One head might focus on grammatical relationships. Another on semantic similarity. Another on coreference (what "it" refers to). All 96 results are combined into a rich contextual representation.</div>
+        </div>
+      </div>
+      <div class="journey-step">
+        <div class="j-num">05</div>
+        <div class="j-content">
+          <span class="j-tag" style="background:var(--blue-l);color:var(--blue);">96 TRANSFORMER LAYERS</span>
+          <div class="j-title">Deep understanding builds layer by layer</div>
+          <div class="j-body">The output of attention flows through 96 sequential transformer layers. Each layer further refines the representation — early layers handle surface features (word types, grammar), middle layers handle semantic meaning, deep layers handle abstract reasoning and intent. By layer 96, the model has a rich understanding of your prompt's full meaning.</div>
+        </div>
+      </div>
+      <div class="journey-step">
+        <div class="j-num">06</div>
+        <div class="j-content">
+          <span class="j-tag" style="background:var(--green-l);color:var(--green);">TOKEN PREDICTION</span>
+          <div class="j-title">Probability scores for every possible next token</div>
+          <div class="j-body">The final layer outputs a probability score for every token in the vocabulary (~50,000 tokens). "Photosynthesis" = 42%, "Plants" = 18%, "This" = 12%... The model hasn't chosen yet — it has a full distribution of possibilities.</div>
+        </div>
+      </div>
+      <div class="journey-step">
+        <div class="j-num">07</div>
+        <div class="j-content">
+          <span class="j-tag" style="background:var(--red-l);color:var(--red);">TEMPERATURE SAMPLING</span>
+          <div class="j-title">Temperature adjusts probabilities, one token is selected</div>
+          <div class="j-body">Temperature reshapes the probability distribution — flattening it (more randomness) or sharpening it (more determinism). Then one token is sampled from the adjusted distribution. At temperature 0.7, "Photosynthesis" wins. The token is converted back to text and immediately streamed to your screen.</div>
+        </div>
+      </div>
+      <div class="journey-step">
+        <div class="j-num">08</div>
+        <div class="j-content">
+          <span class="j-tag" style="background:var(--purple-l);color:var(--purple);">REPEAT</span>
+          <div class="j-title">The entire process repeats for every single word</div>
+          <div class="j-body">The selected token is appended to the prompt, and steps 1–7 run again to generate the next token. A 200-word response requires approximately 270 separate prediction cycles — each one processing the entire conversation history. That's why responses appear word by word, streaming in real time.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ QUIZ ═══ -->
+<div class="quiz-wrap" id="quiz">
+  <div class="container">
+    <div class="quiz-hdr">
+      <div class="eyebrow" style="justify-content:center;">Final Assessment</div>
+      <h2 class="section-title" style="text-align:center;">15 Questions — <em>Basic & Tricky</em></h2>
+      <p class="section-lead" style="text-align:center;margin-bottom:0;">Covers everything from today. Some answers will surprise you.</p>
+    </div>
+
+    <div class="qstats">
+      <div class="qstat"><div class="qstat-num" id="s-ans">0</div><div class="qstat-lbl">Answered</div></div>
+      <div class="qstat"><div class="qstat-num" id="s-cor" style="color:var(--green);">0</div><div class="qstat-lbl">Correct</div></div>
+      <div class="qstat"><div class="qstat-num" id="s-wrg" style="color:var(--red);">0</div><div class="qstat-lbl">Wrong</div></div>
+      <div class="qstat"><div class="qstat-num" id="s-rem">15</div><div class="qstat-lbl">Remaining</div></div>
+    </div>
+    <div class="qpbar-wrap"><div class="qpbar" id="qpb" style="width:0%"></div></div>
+
+    <div id="qwrap">
+
+      <div class="qcard active" data-ans="b" data-type="basic">
+        <div class="qmeta"><span class="qnum">Q 01 / 15</span><span class="qbadge qbadge-b">Basic</span></div>
+        <div class="qtext">What was the name of the 2017 paper that introduced the Transformer architecture?</div>
+        <div class="opts">
+          <button class="opt" onclick="ans(this,'a')">A) "Deep Learning for Language"</button>
+          <button class="opt" onclick="ans(this,'b')">B) "Attention Is All You Need"</button>
+          <button class="opt" onclick="ans(this,'c')">C) "The Language Revolution"</button>
+          <button class="opt" onclick="ans(this,'d')">D) "Neural Machines That Read"</button>
+        </div>
+        <div class="expl">✅ <strong>"Attention Is All You Need"</strong> — published by eight Google researchers in June 2017. It introduced the Transformer architecture and the self-attention mechanism. It has been cited over 100,000 times and is considered one of the most influential papers in computing history.</div>
+        <div class="qnav"><button class="btn btn-o" disabled>← Prev</button><button class="btn btn-p" onclick="nxt(1)">Next →</button></div>
+      </div>
+
+      <div class="qcard" data-ans="c" data-type="basic">
+        <div class="qmeta"><span class="qnum">Q 02 / 15</span><span class="qbadge qbadge-b">Basic</span></div>
+        <div class="qtext">What was the key weakness of RNNs that Transformers solved?</div>
+        <div class="opts">
+          <button class="opt" onclick="ans(this,'a')">A) RNNs were too slow to run on modern hardware</button>
+          <button class="opt" onclick="ans(this,'b')">B) RNNs could not handle multiple languages</button>
+          <button class="opt" onclick="ans(this,'c')">C) RNNs forgot earlier parts of long sequences by the time they reached the end</button>
+          <button class="opt" onclick="ans(this,'d')">D) RNNs required too much training data</button>
+        </div>
+        <div class="expl">✅ <strong>The forgetting problem</strong> — RNNs processed text left to right, one word at a time. By the end of a long sentence, the beginning was effectively "forgotten." Transformers process all tokens simultaneously, so every word can directly attend to every other word regardless of distance.</div>
+        <div class="qnav"><button class="btn btn-o" onclick="prv(2)">← Prev</button><button class="btn btn-p" onclick="nxt(2)">Next →</button></div>
+      </div>
+
+      <div class="qcard" data-ans="d" data-type="tricky">
+        <div class="qmeta"><span class="qnum">Q 03 / 15</span><span class="qbadge qbadge-t">⚡ Tricky</span></div>
+        <div class="qtext">In the sentence "The trophy didn't fit in the suitcase because it was too big" — what does "it" refer to, and how does the Transformer figure it out?</div>
+        <div class="opts">
+          <button class="opt" onclick="ans(this,'a')">A) The suitcase — because it comes later in the sentence</button>
+          <button class="opt" onclick="ans(this,'b')">B) The trophy — because it comes first</button>
+          <button class="opt" onclick="ans(this,'c')">C) Both — Transformers cannot resolve ambiguity</button>
+          <button class="opt" onclick="ans(this,'d')">D) The trophy — attention connects "it" to "big" to "trophy" using context across the whole sentence</button>
+        </div>
+        <div class="expl">✅ <strong>The trophy.</strong> The attention mechanism connects "it" → "big" → "trophy" (the big thing that didn't fit). It also has a high attention score between "fit" and "suitcase" — understanding that the suitcase was the container, not the big thing. This is called coreference resolution — one of the hardest problems in NLP that Transformers finally solved reliably.</div>
+        <div class="qnav"><button class="btn btn-o" onclick="prv(3)">← Prev</button><button class="btn btn-p" onclick="nxt(3)">Next →</button></div>
+      </div>
+
+      <div class="qcard" data-ans="b" data-type="basic">
+        <div class="qmeta"><span class="qnum">Q 04 / 15</span><span class="qbadge qbadge-b">Basic</span></div>
+        <div class="qtext">What is a word embedding?</div>
+        <div class="opts">
+          <button class="opt" onclick="ans(this,'a')">A) A word that is embedded inside another word</button>
+          <button class="opt" onclick="ans(this,'b')">B) A numerical vector that represents a word's meaning in multi-dimensional space</button>
+          <button class="opt" onclick="ans(this,'c')">C) A way of compressing words to save storage space</button>
+          <button class="opt" onclick="ans(this,'d')">D) The process of placing words into a sentence</button>
+        </div>
+        <div class="expl">✅ <strong>A vector representing meaning.</strong> Each word/token is converted to a list of thousands of numbers. Words with similar meanings get similar vectors — they are "close" in the high-dimensional space. This allows mathematical operations on meaning: King − Man + Woman = Queen works because the vectors encode semantic relationships.</div>
+        <div class="qnav"><button class="btn btn-o" onclick="prv(4)">← Prev</button><button class="btn btn-p" onclick="nxt(4)">Next →</button></div>
+      </div>
+
+      <div class="qcard" data-ans="a" data-type="tricky">
+        <div class="qmeta"><span class="qnum">Q 05 / 15</span><span class="qbadge qbadge-t">⚡ Tricky</span></div>
+        <div class="qtext">King − Man + Woman = Queen. This works with embeddings. What does this prove?</div>
+        <div class="opts">
+          <button class="opt" onclick="ans(this,'a')">A) Embeddings encode semantic relationships — gender, royalty — as mathematical directions in vector space</button>
+          <button class="opt" onclick="ans(this,'b')">B) AI understands the meaning of words the same way humans do</button>
+          <button class="opt" onclick="ans(this,'c')">C) LLMs have a dictionary of word definitions stored internally</button>
+          <button class="opt" onclick="ans(this,'d')">D) It proves LLMs are conscious and understand gender</button>
+        </div>
+        <div class="expl">✅ <strong>It proves semantic structure is captured mathematically.</strong> The vector difference "King − Man" captures the concept of royalty without gender. Adding "Woman" adds the female gender direction — landing on "Queen." This is mathematical, not conscious. The AI doesn't "understand" royalty — it has learned that these words relate in this geometric way from training data.</div>
+        <div class="qnav"><button class="btn btn-o" onclick="prv(5)">← Prev</button><button class="btn btn-p" onclick="nxt(5)">Next →</button></div>
+      </div>
+
+      <div class="qcard" data-ans="c" data-type="basic">
+        <div class="qmeta"><span class="qnum">Q 06 / 15</span><span class="qbadge qbadge-b">Basic</span></div>
+        <div class="qtext">What does a high temperature setting (e.g. 1.5) do to an LLM's output?</div>
+        <div class="opts">
+          <button class="opt" onclick="ans(this,'a')">A) Makes responses faster and more accurate</button>
+          <button class="opt" onclick="ans(this,'b')">B) Makes the AI use more computing power</button>
+          <button class="opt" onclick="ans(this,'c')">C) Increases randomness — the AI is more willing to pick less likely tokens, producing more creative but less predictable output</button>
+          <button class="opt" onclick="ans(this,'d')">D) Makes the AI search the internet for answers</button>
+        </div>
+        <div class="expl">✅ <strong>More randomness = more creativity.</strong> High temperature flattens the probability distribution — the AI considers lower-probability tokens more seriously. Great for creative writing and brainstorming. Bad for factual accuracy — the AI might pick a "creative" but wrong answer. Temperature 0 = always the safest choice.</div>
+        <div class="qnav"><button class="btn btn-o" onclick="prv(6)">← Prev</button><button class="btn btn-p" onclick="nxt(6)">Next →</button></div>
+      </div>
+
+      <div class="qcard" data-ans="d" data-type="tricky">
+        <div class="qmeta"><span class="qnum">Q 07 / 15</span><span class="qbadge qbadge-t">⚡ Tricky</span></div>
+        <div class="qtext">You ask Claude at temperature 0: "What is 2 + 2?" You ask again five times. What happens?</div>
+        <div class="opts">
+          <button class="opt" onclick="ans(this,'a')">A) You get five completely different answers</button>
+          <button class="opt" onclick="ans(this,'b')">B) The first answer is correct, later ones may drift</button>
+          <button class="opt" onclick="ans(this,'c')">C) The AI refuses to answer repetitive questions</button>
+          <button class="opt" onclick="ans(this,'d')">D) You get "4" every single time — temperature 0 is fully deterministic</button>
+        </div>
+        <div class="expl">✅ <strong>Temperature 0 = deterministic.</strong> At temperature 0, the model always picks the single highest-probability token. For "2+2=", "4" has overwhelming probability. Every run produces identical output. This is why temperature 0 is used for code generation and mathematical tasks — you need reproducible, correct answers.</div>
+        <div class="qnav"><button class="btn btn-o" onclick="prv(7)">← Prev</button><button class="btn btn-p" onclick="nxt(7)">Next →</button></div>
+      </div>
+
+      <div class="qcard" data-ans="b" data-type="basic">
+        <div class="qmeta"><span class="qnum">Q 08 / 15</span><span class="qbadge qbadge-b">Basic</span></div>
+        <div class="qtext">What is AI hallucination?</div>
+        <div class="opts">
+          <button class="opt" onclick="ans(this,'a')">A) When an AI becomes confused and stops responding</button>
+          <button class="opt" onclick="ans(this,'b')">B) When an AI generates false information with high confidence, presenting it as fact</button>
+          <button class="opt" onclick="ans(this,'c')">C) When an AI generates images from text descriptions</button>
+          <button class="opt" onclick="ans(this,'d')">D) When an AI repeats the same answer multiple times</button>
+        </div>
+        <div class="expl">✅ <strong>Confident false information.</strong> LLMs generate text by predicting what a real answer would look like — not by verifying facts. Sometimes the most statistically likely next words form a plausible-sounding but entirely false statement. The AI doesn't know it's wrong. It never has an "uncertainty alarm" — it generates with equal confidence whether correct or hallucinating.</div>
+        <div class="qnav"><button class="btn btn-o" onclick="prv(8)">← Prev</button><button class="btn btn-p" onclick="nxt(8)">Next →</button></div>
+      </div>
+
+      <div class="qcard" data-ans="c" data-type="tricky">
+        <div class="qmeta"><span class="qnum">Q 09 / 15</span><span class="qbadge qbadge-t">⚡ Tricky</span></div>
+        <div class="qtext">A doctor uses an LLM to look up a drug dosage. The AI confidently gives a wrong dose. Who is responsible?</div>
+        <div class="opts">
+          <button class="opt" onclick="ans(this,'a')">A) The AI company — they built a faulty product</button>
+          <button class="opt" onclick="ans(this,'b')">B) Nobody — AI errors are unforeseeable</button>
+          <button class="opt" onclick="ans(this,'c')">C) The doctor — medical professionals must verify critical information from authoritative sources, not rely solely on AI</button>
+          <button class="opt" onclick="ans(this,'d')">D) The hospital — for allowing AI use</button>
+        </div>
+        <div class="expl">✅ <strong>The doctor bears professional responsibility.</strong> All major LLMs include disclaimers that they should not be used as sole sources for medical, legal, or financial decisions. LLMs hallucinate — this is a known limitation. Professional responsibility requires verifying critical information from authoritative sources. AI is a tool, not an authority.</div>
+        <div class="qnav"><button class="btn btn-o" onclick="prv(9)">← Prev</button><button class="btn btn-p" onclick="nxt(9)">Next →</button></div>
+      </div>
+
+      <div class="qcard" data-ans="a" data-type="basic">
+        <div class="qmeta"><span class="qnum">Q 10 / 15</span><span class="qbadge qbadge-b">Basic</span></div>
+        <div class="qtext">What does the knowledge cutoff mean for an LLM?</div>
+        <div class="opts">
+          <button class="opt" onclick="ans(this,'a')">A) The date after which the AI has no knowledge — it knows nothing about events that happened after this date</button>
+          <button class="opt" onclick="ans(this,'b')">B) The maximum number of tokens the AI can process</button>
+          <button class="opt" onclick="ans(this,'c')">C) The point at which the AI stops responding</button>
+          <button class="opt" onclick="ans(this,'d')">D) The number of topics the AI is trained on</button>
+        </div>
+        <div class="expl">✅ <strong>The frozen date.</strong> After the cutoff, the world moves on but the AI doesn't. Ask an LLM with a 2023 cutoff about a 2024 election — it genuinely doesn't know. It might hallucinate an answer based on patterns, which is even more dangerous. Always check an AI's knowledge cutoff when asking about recent events.</div>
+        <div class="qnav"><button class="btn btn-o" onclick="prv(10)">← Prev</button><button class="btn btn-p" onclick="nxt(10)">Next →</button></div>
+      </div>
+
+      <div class="qcard" data-ans="b" data-type="tricky">
+        <div class="qmeta"><span class="qnum">Q 11 / 15</span><span class="qbadge qbadge-t">⚡ Tricky</span></div>
+        <div class="qtext">Why does an LLM generate text word by word (streaming) rather than all at once?</div>
+        <div class="opts">
+          <button class="opt" onclick="ans(this,'a')">A) To give the user time to read and interrupt if needed</button>
+          <button class="opt" onclick="ans(this,'b')">B) Because each token is generated in a separate prediction step that requires the previous tokens as input</button>
+          <button class="opt" onclick="ans(this,'c')">C) Because internet bandwidth limits how fast text can be sent</button>
+          <button class="opt" onclick="ans(this,'d')">D) It's a design choice — the AI actually generates everything at once internally</button>
+        </div>
+        <div class="expl">✅ <strong>Each token requires the previous tokens.</strong> The model generates token 1, then uses the full prompt + token 1 to generate token 2, then uses all of that to generate token 3 — and so on. It's genuinely sequential — each word depends on everything before it. Streaming to screen is not a delay trick — it reflects the actual generation process.</div>
+        <div class="qnav"><button class="btn btn-o" onclick="prv(11)">← Prev</button><button class="btn btn-p" onclick="nxt(11)">Next →</button></div>
+      </div>
+
+      <div class="qcard" data-ans="d" data-type="basic">
+        <div class="qmeta"><span class="qnum">Q 12 / 15</span><span class="qbadge qbadge-b">Basic</span></div>
+        <div class="qtext">What is positional encoding in a Transformer?</div>
+        <div class="opts">
+          <button class="opt" onclick="ans(this,'a')">A) GPS coordinates for locating the server</button>
+          <button class="opt" onclick="ans(this,'b')">B) The order in which training data was processed</button>
+          <button class="opt" onclick="ans(this,'c')">C) The location of parameters in the model</button>
+          <button class="opt" onclick="ans(this,'d')">D) Information added to each token about its position in the sequence so the model knows word order</button>
+        </div>
+        <div class="expl">✅ <strong>Word order information.</strong> Since Transformers process all tokens simultaneously (not left-to-right like RNNs), they would otherwise have no idea which word came first. Positional encoding adds a unique numerical signal to each token's embedding based on its position — token 1 gets signal A, token 2 gets signal B — so the model knows the sequence order.</div>
+        <div class="qnav"><button class="btn btn-o" onclick="prv(12)">← Prev</button><button class="btn btn-p" onclick="nxt(12)">Next →</button></div>
+      </div>
+
+      <div class="qcard" data-ans="c" data-type="tricky">
+        <div class="qmeta"><span class="qnum">Q 13 / 15</span><span class="qbadge qbadge-t">⚡ Tricky</span></div>
+        <div class="qtext">An LLM trained mostly on English internet data will likely exhibit which type of bias?</div>
+        <div class="opts">
+          <button class="opt" onclick="ans(this,'a')">A) Time bias — favoring older information</button>
+          <button class="opt" onclick="ans(this,'b')">B) Speed bias — answering easy questions faster</button>
+          <button class="opt" onclick="ans(this,'c')">C) Cultural and linguistic bias — Western, English perspectives are over-represented; other cultures and languages are underrepresented</button>
+          <button class="opt" onclick="ans(this,'d')">D) Optimism bias — always giving positive answers</button>
+        </div>
+        <div class="expl">✅ <strong>Cultural and linguistic bias.</strong> The internet skews heavily toward English-language, Western content. An LLM trained on this data will have richer, more accurate knowledge of Western concepts, history, and culture compared to Tamil, African, or Asian contexts. This is why AI performs better in English than Tamil — not because Tamil is harder, but because it has less representation in training data.</div>
+        <div class="qnav"><button class="btn btn-o" onclick="prv(13)">← Prev</button><button class="btn btn-p" onclick="nxt(13)">Next →</button></div>
+      </div>
+
+      <div class="qcard" data-ans="a" data-type="tricky">
+        <div class="qmeta"><span class="qnum">Q 14 / 15</span><span class="qbadge qbadge-t">⚡ Tricky</span></div>
+        <div class="qtext">Multi-head attention runs multiple attention operations in parallel. Why is this better than single attention?</div>
+        <div class="opts">
+          <button class="opt" onclick="ans(this,'a')">A) Different heads can learn different types of relationships simultaneously — grammar, meaning, coreference — giving richer understanding</button>
+          <button class="opt" onclick="ans(this,'b')">B) It makes the model run faster by splitting the workload</button>
+          <button class="opt" onclick="ans(this,'c')">C) It allows the model to process multiple languages at once</button>
+          <button class="opt" onclick="ans(this,'d')">D) It reduces hallucination by checking answers multiple times</button>
+        </div>
+        <div class="expl">✅ <strong>Different heads capture different relationship types.</strong> Imagine reading a sentence looking only for grammatical structure (one head), then reading again looking only for who-refers-to-what (another head), then again for topic relationships (another head). You'd understand the sentence far better than any single reading. That's what 96 attention heads do simultaneously — building a multi-dimensional understanding of every token relationship.</div>
+        <div class="qnav"><button class="btn btn-o" onclick="prv(14)">← Prev</button><button class="btn btn-p" onclick="nxt(14)">Next →</button></div>
+      </div>
+
+      <div class="qcard" data-ans="b" data-type="tricky">
+        <div class="qmeta"><span class="qnum">Q 15 / 15</span><span class="qbadge qbadge-t">⚡ Tricky — Final Boss</span></div>
+        <div class="qtext">A student says: "If I keep the context window full with our conversation, the AI remembers everything we've ever discussed." Is this correct?</div>
+        <div class="opts">
+          <button class="opt" onclick="ans(this,'a')">A) Yes — the context window is permanent memory</button>
+          <button class="opt" onclick="ans(this,'b')">B) No — context window is temporary working memory; once the conversation ends, the AI retains nothing. It also forgets the oldest messages if the window fills up mid-conversation</button>
+          <button class="opt" onclick="ans(this,'c')">C) Yes — but only for premium users</button>
+          <button class="opt" onclick="ans(this,'d')">D) Partially — it remembers the most important parts automatically</button>
+        </div>
+        <div class="expl">✅ <strong>The context window is NOT permanent memory.</strong> It's a temporary working desk. Start a new conversation — the desk is cleared completely. Even within a conversation, if you exceed the context limit, the oldest messages slide off the edge and are forgotten. True persistent memory requires external storage (databases, retrieval systems) added on top of the LLM — which is what AI Agents use, covered in Day 7.</div>
+        <div class="qnav"><button class="btn btn-o" onclick="prv(15)">← Prev</button><button class="btn btn-p" id="subBtn" onclick="submitQ()" disabled>Submit Answers</button></div>
+      </div>
+
+    </div>
+
+    <div class="scoreboard" id="scoreboard">
+      <div class="score-circle" id="sCircle">
+        <div class="score-n" id="sN">0</div>
+        <div class="score-d">/ 15</div>
+      </div>
+      <div class="score-t" id="sT">Calculating...</div>
+      <div class="score-m" id="sM"></div>
+      <div class="score-grid">
+        <div class="sg-item" style="background:var(--green-l);border-color:var(--green-m);">
+          <div class="sg-num" style="color:var(--green);" id="sg-c">0</div><div class="sg-lbl">Correct</div>
+        </div>
+        <div class="sg-item" style="background:var(--red-l);border-color:var(--red-m);">
+          <div class="sg-num" style="color:var(--red);" id="sg-w">0</div><div class="sg-lbl">Wrong</div>
+        </div>
+        <div class="sg-item" style="background:var(--blue-l);border-color:var(--blue-m);">
+          <div class="sg-num" style="color:var(--blue);" id="sg-b">0</div><div class="sg-lbl">Basic Correct</div>
+        </div>
+        <div class="sg-item" style="background:var(--amber-l);border-color:var(--amber-m);">
+          <div class="sg-num" style="color:var(--amber);" id="sg-t">0</div><div class="sg-lbl">Tricky Correct</div>
+        </div>
+      </div>
+      <button class="btn btn-p" onclick="location.reload()">Try Again</button>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  AI Internship · Day 03 — How LLMs Think &amp; Their Limits &nbsp;|&nbsp; Day 04 → Prompt Engineering
+</div>
+
+<script>
+// SCROLL PROGRESS
+window.addEventListener('scroll',()=>{
+  const h=document.documentElement;
+  document.getElementById('progress').style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';
+  const ids=['transformer','attention','parameters','embeddings','temperature','capabilities','limitations','journey','quiz'];
+  const y=window.scrollY+80;
+  ids.forEach(id=>{
+    const el=document.getElementById(id);
+    const a=document.querySelector(`.nav-links a[href="#${id}"]`);
+    if(!el||!a)return;
+    if(el.offsetTop<=y&&el.offsetTop+el.offsetHeight>y)a.classList.add('active');
+    else a.classList.remove('active');
+  });
+});
+
+// ATTENTION DEMO
+const attnData={
+  'the1':{text:"<strong>'The'</strong> — a determiner. High attention to 'trophy' (it's describing the trophy). Low attention to most other words.",score:'trophy → 0.82, didn\'t → 0.12, others → low'},
+  'trophy':{text:"<strong>'Trophy'</strong> — the subject. High attention to 'fit', 'big', and 'it' (later in the sentence, the attention mechanism will connect 'it' back to 'trophy').",score:'fit → 0.74, big → 0.68, it → 0.61, suitcase → 0.22'},
+  'didnt':{text:"<strong>'Didn\'t'</strong> — negation. High attention to 'fit' (it negates fitting). Important for understanding the sentence is about failure to fit.",score:'fit → 0.91, trophy → 0.44, suitcase → 0.38'},
+  'fit':{text:"<strong>'Fit'</strong> — the core verb. Attends strongly to 'trophy' (what didn't fit), 'suitcase' (where it didn't fit), and 'didn't' (negation). This is the semantic core of the sentence.",score:'trophy → 0.85, suitcase → 0.79, didn\'t → 0.91'},
+  'in':{text:"<strong>'In'</strong> — preposition indicating containment. Connects 'suitcase' to 'fit' — the suitcase is the container for the fitting attempt.",score:'suitcase → 0.88, fit → 0.55'},
+  'the2':{text:"<strong>'The'</strong> (second) — determiner for 'suitcase'. High attention to 'suitcase', low to everything else.",score:'suitcase → 0.94, others → very low'},
+  'suitcase':{text:"<strong>'Suitcase'</strong> — the container. High attention to 'fit' and 'in'. Low attention to 'big' — the suitcase is NOT the big thing. The attention pattern helps the model understand the suitcase is where fitting was attempted, not what was big.",score:'fit → 0.82, in → 0.77, big → 0.08 (low!)'},
+  'because':{text:"<strong>'Because'</strong> — causal connector. Links the failure to fit (first clause) with the reason (second clause). High attention to 'fit' and 'big'.",score:'fit → 0.66, big → 0.71, it → 0.44'},
+  'it':{text:"⭐ <strong>'It'</strong> — THE key ambiguous word! The attention mechanism assigns high scores to 'trophy' (0.78) and 'big' (0.71), and low score to 'suitcase' (0.09). Combined with 'big' referring to size, the model correctly resolves 'it' = trophy, not suitcase.",score:'trophy → 0.78 ✅, big → 0.71, suitcase → 0.09 (very low!), because → 0.44'},
+  'was':{text:"<strong>'Was'</strong> — past tense of 'be'. Attends to 'it' (subject) and 'big' (predicate). Helps understand this is a description of the trophy's size.",score:'it → 0.77, big → 0.85'},
+  'too':{text:"<strong>'Too'</strong> — modifier indicating excess. High attention to 'big' (modifies it) and 'fit' (the excess size caused the failure to fit).",score:'big → 0.92, fit → 0.61'},
+  'big':{text:"<strong>'Big'</strong> — the key adjective. High attention to 'it' (what is big), 'trophy' (connecting the bigness to the subject), and 'too' (modified by). Low attention to 'suitcase' — crucial for resolving the ambiguity.",score:'it → 0.81, trophy → 0.74 ✅, too → 0.92, suitcase → 0.11 (low!)'}
+};
+function showAttn(w){
+  const d=attnData[w];
+  if(!d)return;
+  document.getElementById('attnResult').innerHTML=`<strong>Attention analysis:</strong> ${d.text}<br><br><span style="font-family:'Fira Code',monospace;font-size:12px;color:var(--ink4);">Attention scores: ${d.score}</span>`;
+}
+
+// TEMPERATURE
+const tempDescs=[
+  {val:'0.0',desc:'Fully deterministic — always picks the single highest-probability token. Identical output every time.',ex:'blue'},
+  {val:'0.1',desc:'Nearly deterministic — very safe, very consistent. Best for facts and medical/legal information.',ex:'blue'},
+  {val:'0.2',desc:'Minimal variation — highly reliable. Great for structured data extraction and code.',ex:'vast and blue'},
+  {val:'0.3',desc:'Very slight variation — professional and consistent. Good for business writing.',ex:'vast and endlessly blue'},
+  {val:'0.4',desc:'Slight creativity — reliable with small personal touches. Good for emails and summaries.',ex:'endlessly vast'},
+  {val:'0.5',desc:'Balanced — a good middle ground for most professional tasks.',ex:'deep and fathomless'},
+  {val:'0.6',desc:'Slightly creative — adds interest without unpredictability.',ex:'an infinite, breathing expanse'},
+  {val:'0.7',desc:'Default setting for most AI assistants — creative but reliable.',ex:'a restless, silver immensity'},
+  {val:'0.8',desc:'Noticeably creative — responses have personality. Good for storytelling.',ex:'a tempestuous, cathedral of salt and depth'},
+  {val:'0.9',desc:'Very creative — unique and interesting outputs but may drift from topic.',ex:'the world\'s oldest, loneliest dreamer'},
+  {val:'1.0',desc:'High creativity — vibrant outputs with occasional odd choices.',ex:'a breathing, turquoise cathedral of forgotten prayers'},
+  {val:'1.1',desc:'Unpredictable — fascinating and strange in equal measure.',ex:'God\'s unfinished sentence, rewritten daily in foam'},
+  {val:'1.2',desc:'Highly random — interesting but unreliable for factual tasks.',ex:'a mirror of time that swallows ships and secrets alike'},
+  {val:'1.3',desc:'Very random — expect surprises. Not suitable for professional use.',ex:'the sound of existence before language had a name'},
+  {val:'1.4',desc:'Approaching incoherence — outputs are experimental.',ex:'the moon\'s wet blueprint, always arriving, never arrived'},
+  {val:'1.5',desc:'Largely incoherent — only for experimental/artistic purposes.',ex:'crystalline amnesia washing over forgotten geometries'},
+  {val:'1.6',desc:'Very incoherent — sentences may not connect meaningfully.',ex:'where nautical philosophy meets the verb of becoming'},
+  {val:'1.7',desc:'Almost nonsensical — words are strung together unpredictably.',ex:'indigo verbs of the tidal consciousness dissolving outward'},
+  {val:'1.8',desc:'Nonsensical — outputs are largely meaningless.',ex:'phosphorescent grammar of the abyss speaks in reverse'},
+  {val:'1.9',desc:'Complete randomness — outputs have no reliable coherence.',ex:'the salt of forgotten algorithms breathing toward Tuesday'},
+  {val:'2.0',desc:'Maximum randomness — almost always incoherent. Coffee overdose mode ☕',ex:'Zephyr crystalline tidal grammar dissolves phosphorescent verbs outward'}
+];
+function updateTemp(){
+  const v=parseInt(document.getElementById('tempSlider').value);
+  const d=tempDescs[v];
+  document.getElementById('tempVal').textContent=d.val;
+  document.getElementById('tempDesc').textContent=d.desc;
+  document.getElementById('tempExample').textContent='"'+d.ex+'"';
+  const pct=v/20;
+  const r=Math.round(29+pct*180);
+  const g=Math.round(78-pct*50);
+  const b=Math.round(216-pct*180);
+  document.getElementById('tempVal').style.color=`rgb(${r},${g},${b})`;
+}
+updateTemp();
+
+// QUIZ
+const answered={};let correct=0,wrong=0,basicC=0,trickyC=0;
+function ans(btn,choice){
+  const card=btn.closest('.qcard');
+  const idx=Array.from(document.querySelectorAll('.qcard')).indexOf(card);
+  if(answered[idx])return;
+  answered[idx]=true;
+  const ca=card.dataset.ans;
+  const type=card.dataset.type;
+  card.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+  if(choice===ca){btn.classList.add('correct');correct++;if(type==='basic')basicC++;else trickyC++;}
+  else{btn.classList.add('wrong');wrong++;card.querySelectorAll('.opt').forEach(b=>{if(b.getAttribute('onclick').includes(`'${ca}'`))b.classList.add('correct');});}
+  card.querySelector('.expl').classList.add('show');
+  const tot=Object.keys(answered).length;
+  document.getElementById('s-ans').textContent=tot;
+  document.getElementById('s-cor').textContent=correct;
+  document.getElementById('s-wrg').textContent=wrong;
+  document.getElementById('s-rem').textContent=15-tot;
+  document.getElementById('qpb').style.width=(tot/15*100)+'%';
+  if(tot===15)document.getElementById('subBtn').disabled=false;
+}
+function nxt(i){const c=document.querySelectorAll('.qcard');if(i<c.length){c[i-1].classList.remove('active');c[i].classList.add('active');c[i].scrollIntoView({behavior:'smooth',block:'start'});}}
+function prv(i){const c=document.querySelectorAll('.qcard');if(i>1){c[i-1].classList.remove('active');c[i-2].classList.add('active');c[i-2].scrollIntoView({behavior:'smooth',block:'start'});}}
+function submitQ(){
+  const b=document.getElementById('scoreboard');b.classList.add('show');
+  document.getElementById('sN').textContent=correct;
+  document.getElementById('sg-c').textContent=correct;
+  document.getElementById('sg-w').textContent=wrong;
+  document.getElementById('sg-b').textContent=basicC;
+  document.getElementById('sg-t').textContent=trickyC;
+  const p=correct/15;
+  const circ=document.getElementById('sCircle');
+  if(p===1){circ.style.borderColor='var(--green)';document.getElementById('sT').textContent='Perfect Score! 🏆';document.getElementById('sM').textContent='Outstanding. You deeply understand how LLMs think. Ready for Day 4 — Prompt Engineering.';}
+  else if(p>=0.8){circ.style.borderColor='var(--blue)';document.getElementById('sT').textContent='Excellent! 🌟';document.getElementById('sM').textContent='Strong grasp of LLM internals. Review the tricky questions you missed.';}
+  else if(p>=0.6){circ.style.borderColor='var(--amber)';document.getElementById('sT').textContent='Good Work! 👍';document.getElementById('sM').textContent='Solid foundation. Re-read the Attention Mechanism and Limitations sections.';}
+  else{circ.style.borderColor='var(--red)';document.getElementById('sT').textContent='Keep Going! 💪';document.getElementById('sM').textContent='Review the full content again — focus on Attention, Embeddings, and Hallucination.';}
+  b.scrollIntoView({behavior:'smooth',block:'center'});
+}
+</script>
+</body>
+</html>
